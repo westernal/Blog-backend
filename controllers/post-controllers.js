@@ -42,7 +42,7 @@ const getPostByUserId = async (req, res, next) => {
     return next(err);
   }
 
-  res.json({ posts: posts.map((post) => post.toObject({ getters: true })) });
+  res.json({ posts: posts });
 };
 
 const createPosts = async (req, res, next) => {
@@ -62,10 +62,10 @@ const createPosts = async (req, res, next) => {
   let user
 
   try {
-    user = User.findById(creator)
+    user = await User.findById(creator)
+    console.log(user);
   } catch (error) {
-    const err = new HttpError("Post creation failed!", 500);
-    return next(err);
+    return next(error);
   }
 
   if (!user) {
@@ -78,8 +78,7 @@ const createPosts = async (req, res, next) => {
     user.posts.push(createdPost)
     await user.save()
   } catch (error) {
-    const err = new HttpError("Post creation failed!", 500);
-    return next(err);
+    return next(error);
   }
 
   res.status(201).json({ post: createdPost });
@@ -93,8 +92,7 @@ const deletePost = async (res, req, next) => {
   try {
     post = await Post.findById(postId).populate('creator');
   } catch (error) {
-    const err = new HttpError("Post deletion failed!", 500);
-    return next(err);
+    return next(error);
   }
 
   try {
@@ -102,8 +100,7 @@ const deletePost = async (res, req, next) => {
     post.creator.posts.pull(post)
     await post.creator.save()
   } catch (error) {
-    const err = new HttpError("Post deletion failed!", 500);
-    return next(err);
+    return next(error);
   }
 
   res.json({ message: "Post Deleted!" });

@@ -13,7 +13,7 @@ const getUsers = async (req, res, next) => {
     return next(err);
   }
 
-  res.json({ users: users.map(user => user.toObject({ getters: true })) })
+  res.json({ users: users })
 };
 
 const signup = async (req, res, next) => {
@@ -23,15 +23,14 @@ const signup = async (req, res, next) => {
     throw new HttpError("Invalid Inputs", 422);
   }
 
-  const { name, email, password } = req.body;
+  const { username, email, password } = req.body;
 
   let existingUser
 
   try {
     existingUser = await User.findOne({ email: email })
   } catch (error) {
-    const err = new HttpError("Signup failed!", 500);
-    return next(err);
+    return next(error);
   }
 
   if (existingUser) {
@@ -40,7 +39,7 @@ const signup = async (req, res, next) => {
   }
 
   const createdUser = new User({
-    name: name,
+    username: username,
     email: email,
     password: password,
     image: 'url',
@@ -50,15 +49,14 @@ const signup = async (req, res, next) => {
   try {
     await createdUser.save()
   } catch (error) {
-    const err = new HttpError("Signup failed!", 500);
-    return next(err);
+    return next(error);
   }
 
-  res.status(201).json({ user: createdUser.toObject({ getters: true }) })
+  res.status(201).json({ user: createdUser })
 };
 
 const login = async (req, res, next) => {
-  const { name, email, password } = req.body;
+  const { username, email, password } = req.body;
 
   let existingUser
 
@@ -74,7 +72,7 @@ const login = async (req, res, next) => {
     return next(err);
   }
 
-  res.json({ user: createdUser.toObject({ getters: true }) })
+  res.json({ user: existingUser })
 };
 
 exports.getUsers = getUsers;
