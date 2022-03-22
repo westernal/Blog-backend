@@ -5,10 +5,13 @@ const router = express.Router();
 
 const postControllers = require("../controllers/post-controllers");
 const fileUpload = require('../middleware/file-upload');
+const checkAuth = require('../middleware/check-auth');
 
 router.get("/:pid", postControllers.getPostById);
 
 router.get("/user/:uid", postControllers.getPostByUserId);
+
+router.use(checkAuth)
 
 router.post(
   "/",
