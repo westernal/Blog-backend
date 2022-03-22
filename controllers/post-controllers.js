@@ -55,7 +55,7 @@ const createPosts = async (req, res, next) => {
   const createdPost = new Post({
     title: title,
     description: description,
-    image: "url",
+    image: req.file.path,
     creator: creator,
   });
 

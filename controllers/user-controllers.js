@@ -42,7 +42,7 @@ const signup = async (req, res, next) => {
     username: username,
     email: email,
     password: password,
-    image: 'url',
+    image: req.file.path,
     posts: []
   })
 
