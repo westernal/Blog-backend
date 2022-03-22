@@ -11,15 +11,15 @@ const getPostById = async (req, res, next) => {
   let post;
 
   try {
-    post = await post.findById(postId);
+    post = await Post.findById(postId);
   } catch (error) {
-    const err = new HttpError("Could not find the post!", 500);
-    return next(err);
+    
+    return next(error);
   }
 
   if (!post) {
-    const err = new HttpError("Could not find the post!", 500);
-    return next(err);
+    
+    return next(error);
   }
 
   res.json({ post: post.toObject({ getters: true }) });
@@ -84,9 +84,10 @@ const createPosts = async (req, res, next) => {
   res.status(201).json({ post: createdPost });
 };
 
-const deletePost = async (res, req, next) => {
-  const postId = req.params.pid;
+const deletePost = async (req, res, next) => {
 
+  const postId = req.params.pid;
+  
   let post;
 
   try {
