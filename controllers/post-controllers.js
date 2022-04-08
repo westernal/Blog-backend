@@ -1,9 +1,22 @@
 const HttpError = require("../models/http-error");
 const Post = require("../models/posts");
-const User = require('../models/user');
-
+const User = require("../models/user");
+const upload = require("express-fileupload");
 
 const { validationResult } = require("express-validator");
+
+const getPosts = async (req, res, next) => {
+  let posts;
+
+  try {
+    posts = await Post.find({}, "");
+  } catch (error) {
+    const err = new HttpError("Getting posts failed!", 500);
+    return next(err);
+  }
+
+  res.json({ posts: posts });
+};
 
 const getPostById = async (req, res, next) => {
   const postId = req.params.pid;
@@ -13,13 +26,12 @@ const getPostById = async (req, res, next) => {
   try {
     post = await Post.findById(postId);
   } catch (error) {
-    
     return next(error);
   }
 
   if (!post) {
-    
-    return next(error);
+    const err = new HttpError("Could not find the post!", 500);
+    return next(err);
   }
 
   res.json({ post: post.toObject({ getters: true }) });
@@ -31,10 +43,11 @@ const getPostByUserId = async (req, res, next) => {
   let posts;
 
   try {
-    posts = await posts.find({ creator: userId });
+    posts = await Post.find({ creator: userId });
+    console.log(posts);
   } catch (error) {
-    const err = new HttpError("Could not find the post!", 500);
-    return next(err);
+    console.log(error);
+    return next(error);
   }
 
   if (!posts) {
@@ -46,60 +59,55 @@ const getPostByUserId = async (req, res, next) => {
 };
 
 const createPosts = async (req, res, next) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    throw new HttpError("Invalid Inputs", 422);
-  }
   const { title, description, creator } = req.body;
 
   const createdPost = new Post({
     title: title,
     description: description,
-    image: req.file.path,
     creator: creator,
+    image: req.file.path,
   });
 
-  let user
+  let user;
 
   try {
-    user = await User.findById(creator)
-    console.log(user);
-  } catch (error) {
-    return next(error);
+    user = await User.findById(creator);
+  } catch (err) {
+    return next(err);
   }
 
   if (!user) {
-    const err = new HttpError("Could not find user!", 422);
-    return next(err);
+    const error = new HttpError("Could not find user", 422);
+    return next(error);
   }
 
   try {
     await createdPost.save();
-    user.posts.push(createdPost)
-    await user.save()
-  } catch (error) {
-    return next(error);
+    user.posts.push(createdPost);
+    await user.save();
+  } catch (err) {
+    console.log(err);
+    return next(err);
   }
 
   res.status(201).json({ post: createdPost });
 };
 
 const deletePost = async (req, res, next) => {
-
   const postId = req.params.pid;
-  
+
   let post;
 
   try {
-    post = await Post.findById(postId).populate('creator');
+    post = await Post.findById(postId).populate("creator");
   } catch (error) {
     return next(error);
   }
 
   try {
     await post.remove();
-    post.creator.posts.pull(post)
-    await post.creator.save()
+    post.creator.posts.pull(post);
+    await post.creator.save();
   } catch (error) {
     return next(error);
   }
@@ -111,3 +119,4 @@ exports.getPostById = getPostById;
 exports.getPostByUserId = getPostByUserId;
 exports.createPosts = createPosts;
 exports.deletePost = deletePost;
+exports.getPosts = getPosts;

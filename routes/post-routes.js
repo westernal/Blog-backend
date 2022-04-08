@@ -4,8 +4,10 @@ const { check } = require("express-validator");
 const router = express.Router();
 
 const postControllers = require("../controllers/post-controllers");
-const fileUpload = require('../middleware/file-upload');
 const checkAuth = require('../middleware/check-auth');
+const fileUpload = require('../middleware/file-upload')
+
+
 
 router.get("/:pid", postControllers.getPostById);
 
@@ -13,12 +15,12 @@ router.get("/user/:uid", postControllers.getPostByUserId);
 
 router.use(checkAuth)
 
-router.post(
-  "/",
-  fileUpload.single('image'),
-  [check("title").not().isEmpty(), check("description").isLength({ min: 5 })],
+router.post('/',
+fileUpload.single("image"),
   postControllers.createPosts
 );
+
+router.get("/", postControllers.getPosts)
 
 router.delete("/:pid", postControllers.deletePost);
  

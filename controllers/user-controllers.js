@@ -18,11 +18,31 @@ const getUsers = async (req, res, next) => {
   res.json({ users: users });
 };
 
+const getUserById = async (req, res, next) => {
+  const userId = req.params.uid;
+
+  let user;
+
+  try {
+    user = await User.findById(userId);
+  } catch (error) {
+    return next(error);
+  }
+
+  if (!user) {
+    const err = new HttpError("user doesn't exists!", 401);
+    next(err);
+  }
+
+  res.status(200).json({ user: user });
+};
+
 const signup = async (req, res, next) => {
   const errors = validationResult(req);
 
   if (!errors.isEmpty()) {
-    throw new HttpError("Invalid Inputs", 422);
+    console.log(errors);
+    throw new HttpError("user already exists!", 422);
   }
 
   const { username, email, password } = req.body;
@@ -32,6 +52,7 @@ const signup = async (req, res, next) => {
   try {
     existingUser = await User.findOne({ email: email });
   } catch (error) {
+    console.log(error);
     return next(error);
   }
 
@@ -45,6 +66,7 @@ const signup = async (req, res, next) => {
   try {
     hashedPassword = await bcrypt.hash(password, 12);
   } catch (error) {
+    console.log(error);
     return next(error);
   }
 
@@ -52,25 +74,26 @@ const signup = async (req, res, next) => {
     username: username,
     email: email,
     password: hashedPassword,
-    image: req.file.path,
+    image: "req.file.path",
     posts: [],
   });
-
-  try {
-    await createdUser.save();
-  } catch (error) {
-    return next(error);
-  }
 
   let token;
 
   try {
-    token = jwt(
-      { userId: createdUser.id, email: createdUser.email },
-      "secret_key",
-      { expires: "1h" }
+    token = jwt.sign(
+      { userId: createdUser.id, username: createdUser.username },
+      "secret_key"
     );
   } catch (error) {
+    console.log(error);
+    return next(error);
+  }
+
+  try {
+    await createdUser.save();
+  } catch (error) {
+    console.log(error);
     return next(error);
   }
 
@@ -80,19 +103,19 @@ const signup = async (req, res, next) => {
 };
 
 const login = async (req, res, next) => {
-  const { username, email, password } = req.body;
+  const { username, password } = req.body;
 
   let existingUser;
 
   try {
-    existingUser = await User.findOne({ email: email });
+    existingUser = await User.findOne({ username: username });
   } catch (error) {
-    const err = new HttpError("Signup failed!", 500);
+    const err = new HttpError("login failed!", 500);
     return next(err);
   }
 
   if (!existingUser) {
-    const err = new HttpError("Invalid inputs!", 401);
+    const err = new HttpError("user doesn't exists!", 401);
     return next(err);
   }
 
@@ -112,18 +135,22 @@ const login = async (req, res, next) => {
   let token;
 
   try {
-    token = jwt(
-      { userId: existingUser.id, email: existingUser.email },
-      "secret_key",
-      { expires: "1h" }
+    token = jwt.sign(
+      { userId: existingUser.id, username: existingUser.username },
+      "secret_key"
     );
   } catch (error) {
     return next(error);
   }
 
-  res.json({ userId: existingUser.id, email: existingUser.email, token: token });
+  res.json({
+    userId: existingUser.id,
+    email: existingUser.email,
+    token: token,
+  });
 };
 
 exports.getUsers = getUsers;
 exports.signup = signup;
 exports.login = login;
+exports.getUserById = getUserById;
